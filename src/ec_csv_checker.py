@@ -61,8 +61,6 @@ if __name__ == '__main__':
     head = dic_format['header'].lower() == 'yes'
 
     print head, deli, dic_format
-    for k in dic_format['tokens'].keys():
-        print str(type(k)), k
 
     cnt_lines = 0
     with open(str_fn_i_name, 'r') as fili:
@@ -80,9 +78,9 @@ if __name__ == '__main__':
                 for num_col in range(num_cols):
                     str_val = lst_tok[num_col].strip()
                     dic_fmt = dic_format['tokens'][num_col+1]
-                    ##print ">>>", num_col, str_val, dic_fmt
-                    # Data-type
                     lst_vali = list()
+
+                    # Data-type
                     if dic_fmt['datatype'].lower() == 'boolean':
                         if str_val.lower() in ['true', 'false', 'yes', 'no', '1', '0']:
                             lst_vali.append(True)
@@ -121,6 +119,35 @@ if __name__ == '__main__':
                             print "!!! Type error: line {} > '{}' is not {}".format(cnt_lines, str_val, dic_fmt['datatype'])
                     else:
                         print "Seems to be non ISO data type:", dic_fmt['datatype']
+
+                    # Maximum length
+                    if all(lst_vali):  # i.e. No errors so far, in this line
+                        if 'maxi_len' in dic_fmt.keys():
+                            if len(str_val) <= dic_fmt['maxi_len']:
+                                lst_vali.append(True)
+                            else:
+                                lst_vali.append(False)
+                                print "!!! Maxi-length error: line {} > '{}' exceeds {} length".format(cnt_lines, str_val, dic_fmt['maxi_len'])
+
+                    # Maximum value
+                    if all(lst_vali):  # i.e. No errors so far, in this line
+                        if 'maxi_val' in dic_fmt.keys() and dic_fmt['datatype'].lower() in ('integer', 'float'):
+                            if float(str_val) <= float(dic_fmt['maxi_val']):
+                                lst_vali.append(True)
+                            else:
+                                lst_vali.append(False)
+                                print "!!! Maxi-value error: line {} > '{}' exceeds {} value".format(cnt_lines, str_val, dic_fmt['maxi_val'])
+
+                    # Maximum precession
+                    if all(lst_vali):  # i.e. No errors so far, in this line
+                        if 'precessi' in dic_fmt.keys() and dic_fmt['datatype'].lower() in ('float'):
+                            if len(str_val.split('.')[1]) <= float(dic_fmt['precessi']):
+                                lst_vali.append(True)
+                            else:
+                                lst_vali.append(False)
+                                print "!!! Maxi-precession error: line {} > '{}' exceeds {} decimals".format(cnt_lines, str_val, dic_fmt['precessi'])
+
+                    del str_val, dic_fmt
 
 
             # register progress
