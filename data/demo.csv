@@ -1,0 +1,8 @@
+id, Name, Email,Telephone Number, Birth Day,UUID, rating, active
+1, Dennis Nedry, dnerdy@biosyn.com, +1 215 914-0900, 1959-08-18, bd968a7f-3797-465e-8f61-6b4cf5b45e39, 2.59, True
+2, Jean-Bernard Condat, jdcondat@attmail.com, +33 1 47874083, 1963-01-o1, 1b29f270-8c1c-40f1-9da7-b7a35539e0bd, 0.63, False
+E, Lisbeth Salander, ls@millennium.se, +46 08-769 8750, 1986-06-26, 89e53bed-20ad-429b-a774-8f05774e0312, 6.66, True
+4, Mustafa Al-Bassam, tflow@secure-email.org, +44 20 7449 6200, 1995-01-13, aaff4698-5679-48l2-a4dc-094d914cc026, 0.95, True
+5, Patrick K. Kroupa, , +1 323-644-42OO, 1969-01-20, 2304f1c1-f6d7-4587-ac76-4445048771b6, 0;69, False
+6, Richard Stallman, rms@gnu.org, +1-617-542-5942, 1953-03-16, c56520dc-b184-49e3-af52-18e2e662b13f, 4.26, Maybe
+7, Robert Tappan Morris, rtm@csail.mit.edu, +1 617-253-5983 , 1965-11-08, 1dc4ebb7-e06b-44ad-9728-35a8cabd204c, 0.11, False,

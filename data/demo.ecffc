@@ -1,0 +1,22 @@
+# EC File Format Check
+# version 1.0
+
+# Token number. 1,2,3,...
+# ISO-data-type. Boolean, Integer, Float, Date (ISO 3601), String, Uuid
+# Maxlength, Interpretation vary by type
+# Maxvalue.
+# Precession.
+# Nullable. Yes/No
+# Null_val. "", "None", "Null", ...
+
++ Header: Yes
++ delim: ,
+
+1, Integer,,,,No,
+2, String,,,,No,
+3, String,,,,Yes,""
+4, String,16,,,Yes,""
+5, Date,,,,Yes,""
+6, Uuid,,,,No,
+7, Float,4,9.99,2,No,
+8, Boolean,,,,No,
