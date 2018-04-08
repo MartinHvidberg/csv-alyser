@@ -2,13 +2,21 @@
 # -*- coding: utf-8 -*-
 
 """
+Reads through a .csv (Comma Seperated Values) type file, and looks for errors.
+Also needs an .ecffc file, that defines what to be consider an error.
 
+Usage: ec_csv_check.py demo.csv demo.ecffc
 """
 
+import sys
 import dateutil.parser
 from uuid import UUID
 
 ### ToDo
+#   Error statistics summary
+#   real CLI interface
+#   real testing
+#   real documantation
 #   real logging
 
 def isinteger(str_in):
@@ -20,9 +28,13 @@ def isinteger(str_in):
 
 if __name__ == '__main__':
 
-    # Hardcoded - to be later converted to command line parameters
-    str_fn_i_name = r"../data/demo.csv"
-    str_fn_f_name = r"../data/demo.ecffc"
+    # Read CLI parameters
+    if len(sys.argv) > 2:
+        str_fn_i_name = sys.argv[1] # Assume this to be the .csv file
+        str_fn_f_name = sys.argv[2] # Assume this to be the .ecffc file
+    else:
+        print "\n\tUsage: ec_csv_check.py demo.csv demo.ecffc"
+        sys.exit(999)
 
     # Load file format
     dic_format = dict()  # Create dict and fill with some default values.
@@ -55,120 +67,120 @@ if __name__ == '__main__':
                         dic_tok["nullable"] = lst_tok[5].strip().lower() == "yes"
                         dic_format["tokens"][int(lst_tok[0])] = dic_tok
                     else:
-                        print "First token must be integer. Skipping line:", line
+                        print "First token must be + or integer. Skipping line:", line
 
     deli = dic_format["delim"]
     head = dic_format['header'].lower() == 'yes'
     noda = dic_format['nodata'].strip('"')
-
-    print head, deli, noda, dic_format
+    lst_error_by_col = [0 for t in dic_format['tokens'].keys()]
 
     cnt_lines = 0
+    num_cols = 0
     with open(str_fn_i_name, 'r') as fili:
         for line in fili:
+            bol_err_in_this_line = False
             if cnt_lines == 0 and head:
-                print "header", line
+                ##print "header", line
                 lst_header = line.split(deli)
                 num_cols = len(lst_header)
             else:
                 lst_tok = line.split(deli)
-                if head:
+                if head and num_cols != 0:
                     if len(lst_tok) != num_cols:
-                        print "!!! lin {} has wrong number of delimiters:".format(cnt_lines, line)
+                        print "! lin {} has wrong number of delimiters:".format(cnt_lines, line)
                         continue
                 for num_col in range(num_cols):
                     str_val = lst_tok[num_col].strip()
                     dic_fmt = dic_format['tokens'][num_col+1]
-                    lst_vali = list()
 
                     # Data-type
                     if dic_fmt['datatype'].lower() == 'boolean':
                         if str_val.lower() in ['true', 'false', 'yes', 'no', '1', '0']:
-                            lst_vali.append(True)
+                            pass
                         else:
-                            lst_vali.append(False)
-                            print "!!! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
+                            bol_err_in_this_line = True
+                            lst_error_by_col[num_col] += 1
+                            print "! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
                     elif dic_fmt['datatype'].lower() == 'integer':
                         try:
                             res = int(str_val)
-                            lst_vali.append(True)
                         except ValueError:
-                            lst_vali.append(False)
-                            print "!!! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
+                            bol_err_in_this_line = True
+                            lst_error_by_col[num_col] += 1
+                            print "! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
                     elif dic_fmt['datatype'].lower() == 'float':
                         try:
                             res = float(str_val)
-                            lst_vali.append(True)
                         except ValueError:
-                            lst_vali.append(False)
-                            print "!!! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
+                            bol_err_in_this_line = True
+                            lst_error_by_col[num_col] += 1
+                            print "! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
                     elif dic_fmt['datatype'].lower() == 'date':
                         try:
                             res = dateutil.parser.parse(str_val)
-                            lst_vali.append(True)
                         except ValueError:
-                            lst_vali.append(False)
-                            print "!!! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
+                            bol_err_in_this_line = True
+                            lst_error_by_col[num_col] += 1
+                            print "! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
                     elif dic_fmt['datatype'].lower() == 'string':
                         pass  ## Nothing to check...
                     elif dic_fmt['datatype'].lower() == 'uuid':
                         try:
                             res = UUID(str_val, version=4)
-                            lst_vali.append(True)
                         except ValueError:
-                            lst_vali.append(False)
-                            print "!!! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
+                            bol_err_in_this_line = True
+                            lst_error_by_col[num_col] += 1
+                            print "! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
                     else:
                         print "Seems to be non ISO data type:", dic_fmt['datatype']
 
                     # Maximum length
-                    if all(lst_vali):  # i.e. No errors so far, in this line
+                    if not bol_err_in_this_line:  # i.e. No errors so far, in this line
                         if 'maxi_len' in dic_fmt.keys():
                             if len(str_val) <= dic_fmt['maxi_len']:
-                                lst_vali.append(True)
+                                pass
                             else:
-                                lst_vali.append(False)
-                                print "!!! lin {} col {} Maxi-length error: '{}' exceeds {} length".format(cnt_lines, num_col, str_val, dic_fmt['maxi_len'])
+                                bol_err_in_this_line = True
+                                lst_error_by_col[num_col] += 1
+                                print "! lin {} col {} Maxi-length error: '{}' exceeds {} length".format(cnt_lines, num_col, str_val, dic_fmt['maxi_len'])
 
                     # Maximum value
-                    if all(lst_vali):  # i.e. No errors so far, in this line
+                    if not bol_err_in_this_line:  # i.e. No errors so far, in this line
                         if 'maxi_val' in dic_fmt.keys() and dic_fmt['datatype'].lower() in ('integer', 'float'):
                             if float(str_val) <= float(dic_fmt['maxi_val']):
-                                lst_vali.append(True)
+                                pass
                             else:
-                                lst_vali.append(False)
-                                print "!!! lin {} col {} Maxi-value error: '{}' exceeds {} value".format(cnt_lines, num_col, str_val, dic_fmt['maxi_val'])
+                                bol_err_in_this_line = True
+                                lst_error_by_col[num_col] += 1
+                                print "! lin {} col {} Maxi-value error: '{}' exceeds {} value".format(cnt_lines, num_col, str_val, dic_fmt['maxi_val'])
 
                     # Maximum precession
-                    if all(lst_vali):  # i.e. No errors so far, in this line
+                    if not bol_err_in_this_line:  # i.e. No errors so far, in this line
                         if 'precessi' in dic_fmt.keys() and dic_fmt['datatype'].lower() in ('float'):
                             if len(str_val.split('.')[1]) <= float(dic_fmt['precessi']):
-                                lst_vali.append(True)
+                                pass
                             else:
-                                lst_vali.append(False)
-                                print "!!! lin {} col {} Maxi-precession error: '{}' exceeds {} decimals".format(cnt_lines, num_col, str_val, dic_fmt['precessi'])
+                                bol_err_in_this_line = True
+                                lst_error_by_col[num_col] += 1
+                                print "! lin {} col {} Maxi-precession error: '{}' exceeds {} decimals".format(cnt_lines, num_col, str_val, dic_fmt['precessi'])
 
                     # Illegal no-data occurrences
-                    if True: # all(lst_vali):  # i.e. No errors so far, in this line
+                    if True: # not bol_err_in_this_line):  # i.e. No errors so far, in this line
                         if 'nullable' in dic_fmt.keys():
                             ##print "\t", dic_fmt['nullable'], "|"+str_val+"|"
                             if dic_fmt['nullable'] == True or str_val != noda:
-                                lst_vali.append(True)
+                                pass
                             else:
-                                lst_vali.append(False)
-                                print "!!! lin {} col {} Nullable error: No-data value in non-nullable column.".format(cnt_lines, num_col, str_val)
-
-                    # transfer lst_vali counts to global list... XXX
-
-                    del str_val, dic_fmt, lst_vali
-                del lst_tok
-
+                                bol_err_in_this_line = True
+                                lst_error_by_col[num_col] += 1
+                                print "! lin {} col {} Nullable error: No-data value in non-nullable column.".format(cnt_lines, num_col, str_val)
 
             # register progress
             cnt_lines += 1
             if cnt_lines%100000 == 0:
                 print "line:", cnt_lines
 
-    print "\n\tDone {} lines...".format(cnt_lines)
-
     # Summarize error statistics...
+    print "\nNumber of Errors in {} lines, by column = {}".format(cnt_lines, lst_error_by_col)
+
+    print "Done..."
