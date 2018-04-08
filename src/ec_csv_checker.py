@@ -52,7 +52,6 @@ if __name__ == '__main__':
                         if len(lst_tok[4].strip()) > 0:
                             dic_tok["precessi"] = float(lst_tok[4].strip())
                         dic_tok["nullable"] = bool(lst_tok[5].strip())
-                        dic_tok["null_val"] = lst_tok[6].strip()
                         dic_format["tokens"][int(lst_tok[0])] = dic_tok
                     else:
                         print "First token must be integer. Skipping line:", line

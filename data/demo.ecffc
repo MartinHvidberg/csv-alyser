@@ -1,22 +1,23 @@
 # EC File Format Check
 # version 1.0
 
+### Meaning of lines below
 # Token number. 1,2,3,...
-# ISO-data-type. Boolean, Integer, Float, Date (ISO 3601), String, Uuid
+# ISO-data-type. Boolean, Integer, Float, Date (ISO 8601), String, Uuid
 # Maxlength, Interpretation vary by type
 # Maxvalue. Only Integer and Float
-# Precession. Only Float
+# Precession. Only Float, meaning number of digits after '.'
 # Nullable. Yes/No
-# Null_val. "", "None", "Null", ...
 
-+ Header: Yes
-+ delim: ,
++ Header: Yes   # Do the file have a hesder line? Yes/No
++ delim: ,      # Row deviding character ,;.
++ noval: ""     # How is 'no-data' described? "", "None", "Null", ...
 
-1, Integer,,,,No,
-2, String,18,,,No,
-3, String,,,,Yes,""
-4, String,16,,,Yes,""
-5, Date,,,,Yes,""
-6, Uuid,,,,No,
-7, Float,4,9.0,2,No,
-8, Boolean,,,,No,
+1, Integer,,,,No
+2, String,18,,,No
+3, String,,,,Yes
+4, String,16,,,Yes
+5, Date,,,,Yes
+6, Uuid,,,,No
+7, Float,4,9.0,2,No
+8, Boolean,,,,No
