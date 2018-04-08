@@ -28,8 +28,9 @@ if __name__ == '__main__':
     dic_format = dict()  # Create dict and fill with some default values.
     dic_format["header"] = 'Yes'
     dic_format["delim"] = ','
+    dic_format["nodata"] = 'N/A'
     dic_format["tokens"] = dict()
-    with open(str_fn_f_name, 'r') as filf:
+    with open(str_fn_f_name, 'r') as filf:  # Overwrite the defaults with the values from the .ecffc file
         for line in filf:
             str_info = line.split("#")[0]
             if len(str_info) > 1:
@@ -51,15 +52,16 @@ if __name__ == '__main__':
                             dic_tok["maxi_val"] = float(lst_tok[3].strip())
                         if len(lst_tok[4].strip()) > 0:
                             dic_tok["precessi"] = float(lst_tok[4].strip())
-                        dic_tok["nullable"] = bool(lst_tok[5].strip())
+                        dic_tok["nullable"] = lst_tok[5].strip().lower() == "yes"
                         dic_format["tokens"][int(lst_tok[0])] = dic_tok
                     else:
                         print "First token must be integer. Skipping line:", line
 
     deli = dic_format["delim"]
     head = dic_format['header'].lower() == 'yes'
+    noda = dic_format['nodata'].strip('"')
 
-    print head, deli, dic_format
+    print head, deli, noda, dic_format
 
     cnt_lines = 0
     with open(str_fn_i_name, 'r') as fili:
@@ -72,7 +74,7 @@ if __name__ == '__main__':
                 lst_tok = line.split(deli)
                 if head:
                     if len(lst_tok) != num_cols:
-                        print "!!! Row has wrong number of delimiters:", line
+                        print "!!! lin {} has wrong number of delimiters:".format(cnt_lines, line)
                         continue
                 for num_col in range(num_cols):
                     str_val = lst_tok[num_col].strip()
@@ -85,28 +87,28 @@ if __name__ == '__main__':
                             lst_vali.append(True)
                         else:
                             lst_vali.append(False)
-                            print "!!! Type error: line {} > '{}' is not {}".format(cnt_lines, str_val, dic_fmt['datatype'])
+                            print "!!! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
                     elif dic_fmt['datatype'].lower() == 'integer':
                         try:
                             res = int(str_val)
                             lst_vali.append(True)
                         except ValueError:
                             lst_vali.append(False)
-                            print "!!! Type error: line {} > '{}' is not {}".format(cnt_lines, str_val, dic_fmt['datatype'])
+                            print "!!! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
                     elif dic_fmt['datatype'].lower() == 'float':
                         try:
                             res = float(str_val)
                             lst_vali.append(True)
                         except ValueError:
                             lst_vali.append(False)
-                            print "!!! Type error: line {} > '{}' is not {}".format(cnt_lines, str_val, dic_fmt['datatype'])
+                            print "!!! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
                     elif dic_fmt['datatype'].lower() == 'date':
                         try:
                             res = dateutil.parser.parse(str_val)
                             lst_vali.append(True)
                         except ValueError:
                             lst_vali.append(False)
-                            print "!!! Type error: line {} > '{}' is not {}".format(cnt_lines, str_val, dic_fmt['datatype'])
+                            print "!!! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
                     elif dic_fmt['datatype'].lower() == 'string':
                         pass  ## Nothing to check...
                     elif dic_fmt['datatype'].lower() == 'uuid':
@@ -115,7 +117,7 @@ if __name__ == '__main__':
                             lst_vali.append(True)
                         except ValueError:
                             lst_vali.append(False)
-                            print "!!! Type error: line {} > '{}' is not {}".format(cnt_lines, str_val, dic_fmt['datatype'])
+                            print "!!! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
                     else:
                         print "Seems to be non ISO data type:", dic_fmt['datatype']
 
@@ -126,7 +128,7 @@ if __name__ == '__main__':
                                 lst_vali.append(True)
                             else:
                                 lst_vali.append(False)
-                                print "!!! Maxi-length error: line {} > '{}' exceeds {} length".format(cnt_lines, str_val, dic_fmt['maxi_len'])
+                                print "!!! lin {} col {} Maxi-length error: '{}' exceeds {} length".format(cnt_lines, num_col, str_val, dic_fmt['maxi_len'])
 
                     # Maximum value
                     if all(lst_vali):  # i.e. No errors so far, in this line
@@ -135,7 +137,7 @@ if __name__ == '__main__':
                                 lst_vali.append(True)
                             else:
                                 lst_vali.append(False)
-                                print "!!! Maxi-value error: line {} > '{}' exceeds {} value".format(cnt_lines, str_val, dic_fmt['maxi_val'])
+                                print "!!! lin {} col {} Maxi-value error: '{}' exceeds {} value".format(cnt_lines, num_col, str_val, dic_fmt['maxi_val'])
 
                     # Maximum precession
                     if all(lst_vali):  # i.e. No errors so far, in this line
@@ -144,9 +146,22 @@ if __name__ == '__main__':
                                 lst_vali.append(True)
                             else:
                                 lst_vali.append(False)
-                                print "!!! Maxi-precession error: line {} > '{}' exceeds {} decimals".format(cnt_lines, str_val, dic_fmt['precessi'])
+                                print "!!! lin {} col {} Maxi-precession error: '{}' exceeds {} decimals".format(cnt_lines, num_col, str_val, dic_fmt['precessi'])
 
-                    del str_val, dic_fmt
+                    # Illegal no-data occurrences
+                    if True: # all(lst_vali):  # i.e. No errors so far, in this line
+                        if 'nullable' in dic_fmt.keys():
+                            ##print "\t", dic_fmt['nullable'], "|"+str_val+"|"
+                            if dic_fmt['nullable'] == True or str_val != noda:
+                                lst_vali.append(True)
+                            else:
+                                lst_vali.append(False)
+                                print "!!! lin {} col {} Nullable error: No-data value in non-nullable column.".format(cnt_lines, num_col, str_val)
+
+                    # transfer lst_vali counts to global list... XXX
+
+                    del str_val, dic_fmt, lst_vali
+                del lst_tok
 
 
             # register progress
@@ -154,4 +169,6 @@ if __name__ == '__main__':
             if cnt_lines%100000 == 0:
                 print "line:", cnt_lines
 
-    print "Done {} lines...".format(cnt_lines)
+    print "\n\tDone {} lines...".format(cnt_lines)
+
+    # Summarize error statistics...

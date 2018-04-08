@@ -9,15 +9,15 @@
 # Precession. Only Float, meaning number of digits after '.'
 # Nullable. Yes/No
 
-+ Header: Yes   # Do the file have a hesder line? Yes/No
++ header: Yes   # Do the file have a hesder line? Yes/No
 + delim: ,      # Row deviding character ,;.
-+ noval: ""     # How is 'no-data' described? "", "None", "Null", ...
++ nodata: ""    # How is 'no-data' described? "", "None", "Null", ...
 
 1, Integer,,,,No
 2, String,18,,,No
-3, String,,,,Yes
+3, String,,,,no
 4, String,16,,,Yes
 5, Date,,,,Yes
-6, Uuid,,,,No
-7, Float,4,9.0,2,No
-8, Boolean,,,,No
+6, Uuid,,,,NO
+7, Float,4,9.0,2,Yes
+8, Boolean,,,,yes
