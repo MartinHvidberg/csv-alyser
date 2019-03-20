@@ -5,7 +5,7 @@
 Reads through a .csv (Comma Seperated Values) type file, and looks for errors.
 Also needs an .ecffc file, that defines what to be consider an error.
 
-Usage: ec_csv_check.py demo.csv demo.ecffc
+Usage: ec_csv_check.py demo_checker.csv demo_checker.ecffc
 """
 
 import sys
@@ -33,7 +33,7 @@ if __name__ == '__main__':
         str_fn_i_name = sys.argv[1] # Assume this to be the .csv file
         str_fn_f_name = sys.argv[2] # Assume this to be the .ecffc file
     else:
-        print "\n\tUsage: ec_csv_check.py demo.csv demo.ecffc"
+        print "\n\tUsage: ec_csv_check.py demo_checker.csv demo_checker.ecffc"
         sys.exit(999)
 
     # Load file format
@@ -74,15 +74,18 @@ if __name__ == '__main__':
     noda = dic_format['nodata'].strip('"')
     lst_error_by_col = [0 for t in dic_format['tokens'].keys()]
 
+    print dic_format
+
     cnt_lines = 0
     num_cols = 0
     with open(str_fn_i_name, 'r') as fili:
         for line in fili:
             bol_err_in_this_line = False
             if cnt_lines == 0 and head:
-                ##print "header", line
+                print "header:", line.strip()
                 lst_header = line.split(deli)
                 num_cols = len(lst_header)
+                print "num cols:", num_cols, "deli:", deli
             else:
                 lst_tok = line.split(deli)
                 if head and num_cols != 0:
@@ -94,65 +97,66 @@ if __name__ == '__main__':
                     dic_fmt = dic_format['tokens'][num_col+1]
 
                     # Data-type
-                    if dic_fmt['datatype'].lower() == 'boolean':
-                        if str_val.lower() in ['true', 'false', 'yes', 'no', '1', '0']:
-                            pass
+                    if str_val != '':
+                        if dic_fmt['datatype'].lower() == 'boolean':
+                            if str_val.lower() in ['true', 'false', 'yes', 'no', '1', '0']:
+                                pass
+                            else:
+                                bol_err_in_this_line = True
+                                lst_error_by_col[num_col] += 1
+                                print "! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
+                        elif dic_fmt['datatype'].lower() == 'integer':
+                            try:
+                                res = int(str_val)
+                            except ValueError:
+                                bol_err_in_this_line = True
+                                lst_error_by_col[num_col] += 1
+                                print "! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
+                        elif dic_fmt['datatype'].lower() == 'float':
+                            try:
+                                res = float(str_val)
+                            except ValueError:
+                                bol_err_in_this_line = True
+                                lst_error_by_col[num_col] += 1
+                                print "! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
+                        elif dic_fmt['datatype'].lower() == 'date':
+                            try:
+                                res = dateutil.parser.parse(str_val)
+                            except ValueError:
+                                bol_err_in_this_line = True
+                                lst_error_by_col[num_col] += 1
+                                print "! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
+                        elif dic_fmt['datatype'].lower() == 'string':
+                            pass  ## Nothing to check...
+                        elif dic_fmt['datatype'].lower() == 'uuid':
+                            try:
+                                res = UUID(str_val, version=4)
+                            except ValueError:
+                                bol_err_in_this_line = True
+                                lst_error_by_col[num_col] += 1
+                                print "! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
                         else:
-                            bol_err_in_this_line = True
-                            lst_error_by_col[num_col] += 1
-                            print "! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
-                    elif dic_fmt['datatype'].lower() == 'integer':
-                        try:
-                            res = int(str_val)
-                        except ValueError:
-                            bol_err_in_this_line = True
-                            lst_error_by_col[num_col] += 1
-                            print "! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
-                    elif dic_fmt['datatype'].lower() == 'float':
-                        try:
-                            res = float(str_val)
-                        except ValueError:
-                            bol_err_in_this_line = True
-                            lst_error_by_col[num_col] += 1
-                            print "! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
-                    elif dic_fmt['datatype'].lower() == 'date':
-                        try:
-                            res = dateutil.parser.parse(str_val)
-                        except ValueError:
-                            bol_err_in_this_line = True
-                            lst_error_by_col[num_col] += 1
-                            print "! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
-                    elif dic_fmt['datatype'].lower() == 'string':
-                        pass  ## Nothing to check...
-                    elif dic_fmt['datatype'].lower() == 'uuid':
-                        try:
-                            res = UUID(str_val, version=4)
-                        except ValueError:
-                            bol_err_in_this_line = True
-                            lst_error_by_col[num_col] += 1
-                            print "! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype'])
-                    else:
-                        print "Seems to be non ISO data type:", dic_fmt['datatype']
+                            pass #XXXprint "Seems to be non ISO data type:", dic_fmt['datatype']
 
-                    # Maximum length
-                    if not bol_err_in_this_line:  # i.e. No errors so far, in this line
-                        if 'maxi_len' in dic_fmt.keys():
-                            if len(str_val) <= dic_fmt['maxi_len']:
-                                pass
-                            else:
-                                bol_err_in_this_line = True
-                                lst_error_by_col[num_col] += 1
-                                print "! lin {} col {} Maxi-length error: '{}' exceeds {} length".format(cnt_lines, num_col, str_val, dic_fmt['maxi_len'])
+                        # Maximum length
+                        if not bol_err_in_this_line:  # i.e. No errors so far, in this line
+                            if 'maxi_len' in dic_fmt.keys():
+                                if len(str_val) <= dic_fmt['maxi_len']:
+                                    pass
+                                else:
+                                    bol_err_in_this_line = True
+                                    lst_error_by_col[num_col] += 1
+                                    print "! lin {} col {} Maxi-length error: '{}' exceeds {} length".format(cnt_lines, num_col, str_val, dic_fmt['maxi_len'])
 
-                    # Maximum value
-                    if not bol_err_in_this_line:  # i.e. No errors so far, in this line
-                        if 'maxi_val' in dic_fmt.keys() and dic_fmt['datatype'].lower() in ('integer', 'float'):
-                            if float(str_val) <= float(dic_fmt['maxi_val']):
-                                pass
-                            else:
-                                bol_err_in_this_line = True
-                                lst_error_by_col[num_col] += 1
-                                print "! lin {} col {} Maxi-value error: '{}' exceeds {} value".format(cnt_lines, num_col, str_val, dic_fmt['maxi_val'])
+                        # Maximum value
+                        if not bol_err_in_this_line:  # i.e. No errors so far, in this line
+                            if 'maxi_val' in dic_fmt.keys() and dic_fmt['datatype'].lower() in ('integer', 'float'):
+                                if float(str_val) <= float(dic_fmt['maxi_val']):
+                                    pass
+                                else:
+                                    bol_err_in_this_line = True
+                                    lst_error_by_col[num_col] += 1
+                                    print "! lin {} col {} Maxi-value error: '{}' exceeds {} value".format(cnt_lines, num_col, str_val, dic_fmt['maxi_val'])
 
                     # Maximum precession
                     if not bol_err_in_this_line:  # i.e. No errors so far, in this line

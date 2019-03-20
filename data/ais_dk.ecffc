@@ -1,0 +1,41 @@
+# EC File Format Check
+# version 1.0
+
+### Meaning of lines below
+# Token number. 1,2,3,...
+# ISO-data-type. Boolean, Integer, Float, Date (ISO 8601), String, Uuid
+# Maxlength, Interpretation vary by type
+# Maxvalue. Only Integer and Float
+# Precession. Only Float, meaning number of digits after '.'
+# Nullable. Yes/No
+
++ header: Yes   # Do the file have a hesder line? Yes/No
++ delim: ,      # Row deviding character ,;.
++ nodata: ""    # How is 'no-data' described? "", "None", "Null", ...
+
+1, string, 20,,, No # Timestamp
+2, string, 20,,, Yes # Type of mobile
+3, integer, 20,,, Yes # MMSI
+4, float, 20,,, Yes # Latitude
+5, float, 20,,, Yes # Longitude
+6, string, 40,,, Yes # Navigational status
+7, float, 20,,, Yes # ROT
+8, float, 20,,, Yes # SOG
+9, float, 20,,, Yes # COG
+10, integer, 20,,, Yes # Heading
+11, string, 20,,, Yes # IMO
+12, string, 8,,, Yes # Callsign
+13, string, 20,,, Yes # Name
+14, string, 32,,, Yes # Ship type
+15, string, 32,,, Yes # Cargo type
+16, integer, 20,,, Yes # Width
+17, integer, 20,,, Yes # Length
+18, string, 20,,, Yes # Type of position fixing device
+19, float, 20,,, Yes # Draught
+20, string, 20,,, Yes # Destination
+21, string, 20,,, Yes # ETA
+22, string, 20,,, Yes # Data source type
+23, integer, 20,,, Yes # A
+24, integer, 20,,, Yes # B
+25, integer, 20,,, Yes # C
+26, integer, 20,,, Yes # D

@@ -1,0 +1,8 @@
+
+Encoding errors / character set conversion errors.
+I don't know how to approach NULL values.
+I'm seeing incompatible line return characters.
+File is too huge for my text editor
+Trailing commas
+Extra commas in field values
+Leading zeros

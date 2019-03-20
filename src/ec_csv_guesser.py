@@ -2,40 +2,7 @@ import sys
 
 from uuid import UUID
 
-# def tokenize(str_line):
-#     if isinstance(str_line, str):
-#         str_line = str_line.rstrip('\n') # remove trailing EOL
-#     else:
-#         return None
 
-# "date", "uuid", "int", "float"
-
-# def val2date(str_in):
-#     try:
-#         dt = dup.parse(str_in)
-#     except:
-#         dt = False
-#     return dt
-#
-# def val2uuid(str_in):
-#     lst_valid = list()
-#     for n in (1,2,3,4):
-#         if str_in[14]==n and str_in == UUID(str_in, version=n):
-#             lst_valid.append(n)
-#         else:
-#             pass
-#     if len(lst_valid) > 0:
-#         return True
-#     else:
-#         return False
-#
-# def val2int(str_in):
-#     ret = str_in
-#     return ret
-#
-# def val2int(str_in):
-#     ret = str_in
-#     return ret
 
 def all_is_uuid(lst_in):
     """Return True if all members of input list can be converted to valid uuid,
@@ -105,6 +72,47 @@ def all_is_float(lst_in):
     else:
         return False
 
+def find_usable_delimitor(los_top):
+    lst_pde = (",", ".", ";", ":", " ", "\t") # list of potential delimiters
+    dic_pde = dict()
+    lst_gde = list() # list of good delimiters
+    for de in lst_pde:
+        dic_pde[de] = list()
+        for itm in los_top:
+            dic_pde[de].append(itm.count(de))
+    for de in dic_pde.keys():
+        valid = len(set(dic_pde[de]))==1 and dic_pde[de][0] != 0
+        print de, ":", str(valid), sorted(list(set(dic_pde[de])))
+        if valid:
+            lst_gde.append(de)
+    print "Good delimiters: " + str(lst_gde)
+    if len(lst_gde) == 1:
+        return lst_gde[0]
+    else:
+        print "No conclusive delimiter found... {}".format(lst_gde)
+        sys.exit(999)
+
+def validate_same_delimiter_count_in_all_lines(deli, los_long):
+    lst_delis = list((str_in.count(deli) for str_in in los_long))
+    print "Number of delimiters per line:", set(lst_delis)
+    num_delis = len(set(lst_delis))
+    print "Number of different number of delimiters per line (should be 1):", num_delis
+    if num_delis == 1:
+        cols = lst_delis[0]+1
+    else:
+        #print "stat: {}".format(lst_delis)
+        for cnt in set(lst_delis):
+            print "Cnt: {} seen {} times".format(cnt, lst_delis.count(cnt))
+        print "Exiting due to delimiter count conflict... Please fix your data!"
+        ## it's 1095897881
+        for str_in in los_long:
+            if str_in.count(deli) != 43:
+                print str_in
+        ##
+        sys.exit(999)
+    print "Cols:", cols
+
+
 def make_sql_create_table(str_tab_name, lst_field_names, lst_field_types):
     str_tab_name = "imports."+str_tab_name
     print "tabname:", str(type(str_tab_name)), str_tab_name
@@ -145,66 +153,22 @@ if __name__ == '__main__':
     # Hardcoded - to be later converted to command line parameters
     chr_pref_deli = "\t" # default = None
     str_file_name = "/home/martin/MEGA/Snaps_HDD/DATA/Forekomster/GBIF_org/2017-10-08/GBIF_plant.csv"
-    str_table_name = "Snaps"
+    str_file_name = "/home/martin/Work/AIS_DK/aisdk_20190208_samp.csv"
+    str_file_name = r"../data/demo_checker.csv"
+    str_table_name = "Samp"
 
-    print "Reading file..."
+    print("Reading file: {}".format(str_file_name))
     with open(str_file_name, 'r') as csvfile:
         los_long = csvfile.readlines()
     print "Processing {} lines of information...".format(len(los_long))
 
-    #for line in los_long:
-    #    pass#tokenize(line) - Early time pass...
+    los_top = los_long[:65536]  # assume this sample to reveal all variations
 
-    los_top = los_long#[:1024]
+    deli = find_usable_delimitor(los_top)
 
-    ##print "Top:"
-    ##for itm in los_top:
-    ##    print itm.strip()
+    validate_same_delimiter_count_in_all_lines(deli, los_long)
 
-    # Find correct delimiter
-    lst_pde = (",", ".", ";", ":", " ", "\t") # list of potential delimiters
-    dic_pde = dict()
-    lst_gde = list() # list of good delimiters
-    for de in lst_pde:
-        dic_pde[de] = list()
-        for itm in los_top:
-            dic_pde[de].append(itm.count(de))
-    for de in dic_pde.keys():
-        valid = len(set(dic_pde[de]))==1
-        print de, ":", str(valid)
-        if valid:
-            lst_gde.append(de)
-    print "Good delimiters: " + str(lst_gde)
-    if len(lst_gde) == 1:
-        deli = lst_gde[0]
-    else:
-        print "No conclusive delimiter found... "
-        if chr_pref_deli:
-            if chr_pref_deli in lst_gde:
-                deli = chr_pref_deli
-                print "Falling back on prefered delimiter"
-            else:
-                print "No prefered delimiter indicated - Exiting"
-                sys.exit(0)
-    # validate same number all the way
-    lst_delis = list((str_in.count(deli) for str_in in los_long))
-    num_delis = len(set(lst_delis))
-    print "Number of delimiters per line:", set(lst_delis)
-    print "Number of different number of delimiters per line (should be 1):", num_delis
-    if num_delis == 1:
-        cols = lst_delis[0]+1
-    else:
-        #print "stat: {}".format(lst_delis)
-        for cnt in set(lst_delis):
-            print "Cnt: {} seen {} times".format(cnt, lst_delis.count(cnt))
-        print "Exiting due to delimiter count conflict... Please fix your data!"
-        ## it's 1095897881
-        for str_in in los_long:
-            if str_in.count(deli) != 43:
-                print str_in
-        ##
-        sys.exit(999)
-    print "Cols:", cols
+    del los_long
 
     # Tokenize and cross-hatch
     lolot_top = list((str.split(deli) for str in los_top))
