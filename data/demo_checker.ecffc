@@ -1,5 +1,9 @@
 # EC File Format Check
-# version 1.0
+# version 1.1
+
++ header: Yes   # Do the file have a header line? Yes/No
++ delim: ,      # Row deviding character ,;.
++ nodata: ""    # How is 'no-data' described? "", "None", "Null", ...
 
 ### Meaning of lines below
 # Token number. 1,2,3,...
@@ -8,16 +12,14 @@
 # Maxvalue. Only Integer and Float
 # Precession. Only Float, meaning number of digits after '.'
 # Nullable. Yes/No
+# Null-value. What is the Null value used in this column. If not given then defaults to 'nodata' above
+# Unique. Yes/No. Must thit column be unique, like in primary key.
 
-+ header: Yes   # Do the file have a hesder line? Yes/No
-+ delim: ,      # Row deviding character ,;.
-+ nodata: ""    # How is 'no-data' described? "", "None", "Null", ...
-
-1, Integer,,,,No
-2, String,18,,,No
-3, String,,,,no
-4, String,16,,,Yes
-5, Date,,,,Yes
-6, Uuid,,,,NO
-7, Float,4,9.0,2,Yes
-8, Boolean,,,,yes
+1, Integer,,,,No,,Yes
+2, String,18,,,No,,No
+3, String,,,,no,,No
+4, String,16,,,Yes,,No
+5, Date,,,,Yes,,No
+6, Uuid,,,,NO,,Yes
+7, Float,4,9.0,2,Yes,,No
+8, Boolean,,,,yes,,No
