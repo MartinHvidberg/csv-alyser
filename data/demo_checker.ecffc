@@ -5,7 +5,7 @@
 
 + header: Yes   # Do the file have a header line? Yes/No
 + delim: ,      # Row deviding character ,;.
-+ nodata: ""    # How is 'no-data' described? "", "None", "Null", ...
++ nodata: ""    # How is 'no-data' described? "", "None", "Null", "N/A", ...
 
 ### Meaning of lines below
 # number: Colunm number in the data file. 1,2,3,...
@@ -24,6 +24,6 @@
 3,	String,		,		,		,		no,		,		No
 4,	String,		16,		,		,		Yes,	,		No
 5,	Date,		,		,		,		Yes,	N/A,	No
-6,	Uuid,		,		,		,		NO,		,		Yes
+6,	Uuid,		,		,		,		NO,		,		yes
 7,	Float,		4,		9.0,	2,		Yes,	,		No
 8,	Boolean,	,		,		,		yes,	,		No

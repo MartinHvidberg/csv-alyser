@@ -44,28 +44,35 @@ def load_format_file(str_fn):
                     ##print "fft: |" + str_info.strip() + "|"
                     if ',' in str_info:
                         lst_tok = [tok.strip() for tok in str_info.strip().split(',')]
-                        if isinteger(lst_tok[0]):  # Column definition must start with column number
-                            num_col = int(lst_tok[0])
-                            if num_col in dic_format["tokens"].keys():
-                                print("Warning: Column number {} have all ready been defined, Skipping line: \"{}\"".format(num_col, str_info))
-                                continue
-                            dic_tok = dict()
-                            dic_tok["datatype"] = lst_tok[1].strip()
-                            if len(lst_tok[2].strip()) > 0:
-                                dic_tok["maxi_len"] = float(lst_tok[2].strip())
-                            if len(lst_tok[3].strip()) > 0:
-                                dic_tok["maxi_val"] = float(lst_tok[3].strip())
-                            if len(lst_tok[4].strip()) > 0:
-                                dic_tok["precessi"] = float(lst_tok[4].strip())
-                            dic_tok["nullable"] = lst_tok[5].strip().lower() == "yes"
-                            dic_format["tokens"][num_col] = dic_tok
+                        if len(lst_tok) == 8:  # We have defined 8 parameters
+                            if isinteger(lst_tok[0]):  # Column definition must start with column number
+                                num_col = int(lst_tok[0])
+                                if num_col in dic_format["tokens"].keys():
+                                    print("Warning: Column number {} have all ready been defined, Skipping line: \"{}\"".format(num_col, str_info))
+                                    continue
+                                dic_tok = dict()
+                                dic_tok["datatype"] = lst_tok[1]
+                                if len(lst_tok[2]) > 0:
+                                    dic_tok["maxi_len"] = float(lst_tok[2])
+                                if len(lst_tok[3]) > 0:
+                                    dic_tok["maxi_val"] = float(lst_tok[3])
+                                if len(lst_tok[4]) > 0:
+                                    dic_tok["precessi"] = float(lst_tok[4])
+                                dic_tok["nullable"] = lst_tok[5].lower() == "yes"
+                                if len(lst_tok[6]) > 0:
+                                    dic_tok["nullval"] = lst_tok[6]
+                                dic_tok["unique"] = lst_tok[7].lower() == "yes"
+                                dic_format["tokens"][num_col] = dic_tok
+                            else:
+                                print("First token must be + or integer. Skipping line: {}".format(line.strip()))
                         else:
-                            print("First token must be + or integer. Skipping line: {}".format(line))
+                            print("Column definition do not hold 8 values: \"{}\" => {}".format(line.strip(), lst_tok))
+                            sys.exit(999)
                     else:
                         print("Format descripter line have no ','. That is strange: {}".format(line))
 
     print("Format:")
-    for keyf in dic_format.keys():
+    for keyf in sorted(dic_format.keys()):
         if keyf != 'tokens':
             print("  {}: {}".format(keyf, dic_format[keyf]))
     if 'tokens' in dic_format.keys():
@@ -92,7 +99,7 @@ def scan_data_file(str_fn, dic_form):
     lst_error_by_col = [0 for t in dic_form['tokens'].keys()]
 
     cnt_lines = 0
-    num_cols = 0
+    num_cols = 0  # XXX Consider looking in dic_form to determine num_cols XXX
     with open(str_fn, 'r') as fili:
         for line in fili:
             bol_err_in_this_line = False  # Assumed innocent, until proven guilty...
@@ -107,7 +114,7 @@ def scan_data_file(str_fn, dic_form):
                         print("! lin {} has wrong number of delimiters: {}".format(cnt_lines, line))
                         continue
                 for num_col in range(num_cols):
-                    str_val = lst_tok[num_col].strip()
+                    str_val = lst_tok[num_col]
                     dic_fmt = dic_form['tokens'][num_col+1]
 
                     # Data-type
@@ -116,7 +123,7 @@ def scan_data_file(str_fn, dic_form):
                             if str_val.lower() in ['true', 'false', 'yes', 'no', '1', '0']:
                                 pass
                             else:
-                                bol_err_in_this_line = True
+                                bol_err_in_this_line = True  # XXX DRY these three lines XXX
                                 lst_error_by_col[num_col] += 1
                                 print("! lin {} col {} Type error: '{}' is not {}".format(cnt_lines, num_col, str_val, dic_fmt['datatype']))
                         elif dic_fmt['datatype'].lower() == 'integer':
@@ -186,7 +193,7 @@ def scan_data_file(str_fn, dic_form):
                     if True: # not bol_err_in_this_line):  # i.e. No errors so far, in this line
                         if 'nullable' in dic_fmt.keys():
                             ##print "\t", dic_fmt['nullable'], "|"+str_val+"|"
-                            if dic_fmt['nullable'] == True or str_val != str_noda:
+                            if dic_fmt['nullable'] == True or str_val != str_noda:  # XXX Qualify if this should be AND, not OR XXX
                                 pass
                             else:
                                 bol_err_in_this_line = True
