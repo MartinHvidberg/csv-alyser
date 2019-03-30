@@ -1,25 +1,29 @@
 # EC File Format Check
 # version 1.1
 
+# Anything Right of a # is considered a comment, and ignored by the the program.
+
 + header: Yes   # Do the file have a header line? Yes/No
 + delim: ,      # Row deviding character ,;.
 + nodata: ""    # How is 'no-data' described? "", "None", "Null", ...
 
 ### Meaning of lines below
-# Token number. 1,2,3,...
-# ISO-data-type. Boolean, Integer, Float, Date (ISO 8601), String, Uuid
-# Maxlength, Interpretation vary by type
-# Maxvalue. Only Integer and Float
-# Precession. Only Float, meaning number of digits after '.'
-# Nullable. Yes/No
-# Null-value. What is the Null value used in this column. If not given then defaults to 'nodata' above
-# Unique. Yes/No. Must thit column be unique, like in primary key.
+# number: Colunm number in the data file. 1,2,3,...
+# Type: ISO-data-type. Boolean, Integer, Float, Date (ISO 8601), String, Uuid.
+# Max-len: Maximum length, Interpretation vary by type
+# Max-val: Maximum value. Only Integer and Float
+# Precis: Precession. Only Float, meaning number of digits after '.'
+# Nullabl: Nullable? Yes/No
+# Nullval: Null value. What is the Null value used in this column. If not given then defaults to 'nodata' above
+# Unique: Unique? Yes/No. Must thit column be unique, like in primary key.
+# TAB's are only used to aid readability, the program ignores it, and considers only the ','s
 
-1, Integer,,,,No,,Yes
-2, String,18,,,No,,No
-3, String,,,,no,,No
-4, String,16,,,Yes,,No
-5, Date,,,,Yes,,No
-6, Uuid,,,,NO,,Yes
-7, Float,4,9.0,2,Yes,,No
-8, Boolean,,,,yes,,No
+###	Type		Max-len	Mav-val	Precis	Nullabl	Nullval	Unique
+1,	Integer,	,		,		,		No,		,		Yes
+2,	String,		18,		,		,		No,		,		No
+3,	String,		,		,		,		no,		,		No
+4,	String,		16,		,		,		Yes,	,		No
+5,	Date,		,		,		,		Yes,	N/A,	No
+6,	Uuid,		,		,		,		NO,		,		Yes
+7,	Float,		4,		9.0,	2,		Yes,	,		No
+8,	Boolean,	,		,		,		yes,	,		No

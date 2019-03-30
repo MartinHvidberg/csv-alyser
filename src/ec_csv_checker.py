@@ -22,6 +22,8 @@ from uuid import UUID
 
 def load_format_file(str_fn):
 
+    print("\nLoading format file: {}".format(str_fn))
+
     # Load file format
     dic_format = dict()  # Create dict and fill with some default values.
     dic_format["header"] = 'Yes'
@@ -30,19 +32,23 @@ def load_format_file(str_fn):
     dic_format["tokens"] = dict()
     with open(str_fn, 'r') as filf:  # Overwrite the defaults with the values from the .ecffc file
         for line in filf:
-            str_info = line.split("#")[0]
-            if len(str_info) > 1:
-                if str_info[0] == "+" and ":" in str_info:
-                    str_hkey = str_info[1:].split(":")[0].strip().lower()
-                    str_hval = str_info[1:].split(":")[1].strip()
+            str_info = line.split("#")[0]  # Lose all comments
+            str_info = str_info.strip().replace('\t','')  # Trim and lose TAB
+            if len(str_info) > 1:  # Skip empty lines
+                if str_info[0] == "+" and ":" in str_info:  # Spec for entire data file
+                    str_hkey, str_hval = [tok.strip() for tok in str_info[1:].strip().split(':')]
                     ##print "ffk:", str_hkey, "=", str_hval
                     if str_hkey != "tokens":
                         dic_format[str_hkey] = str_hval
-                else:
+                else:  # Specs for a specific column of data
                     ##print "fft: |" + str_info.strip() + "|"
                     if ',' in str_info:
-                        lst_tok = str_info.split(",")
-                        if isinteger(lst_tok[0]):
+                        lst_tok = [tok.strip() for tok in str_info.strip().split(',')]
+                        if isinteger(lst_tok[0]):  # Column definition must start with column number
+                            num_col = int(lst_tok[0])
+                            if num_col in dic_format["tokens"].keys():
+                                print("Warning: Column number {} have all ready been defined, Skipping line: \"{}\"".format(num_col, str_info))
+                                continue
                             dic_tok = dict()
                             dic_tok["datatype"] = lst_tok[1].strip()
                             if len(lst_tok[2].strip()) > 0:
@@ -52,7 +58,7 @@ def load_format_file(str_fn):
                             if len(lst_tok[4].strip()) > 0:
                                 dic_tok["precessi"] = float(lst_tok[4].strip())
                             dic_tok["nullable"] = lst_tok[5].strip().lower() == "yes"
-                            dic_format["tokens"][int(lst_tok[0])] = dic_tok
+                            dic_format["tokens"][num_col] = dic_tok
                         else:
                             print("First token must be + or integer. Skipping line: {}".format(line))
                     else:
@@ -61,7 +67,7 @@ def load_format_file(str_fn):
     print("Format:")
     for keyf in dic_format.keys():
         if keyf != 'tokens':
-            print("  {} : {}".format(keyf, dic_format[keyf]))
+            print("  {}: {}".format(keyf, dic_format[keyf]))
     if 'tokens' in dic_format.keys():
         for keyt in sorted(dic_format['tokens'].keys()):
             print("    {} : {}".format(keyt, dic_format['tokens'][keyt]))
@@ -75,35 +81,28 @@ def isinteger(str_in):
     except ValueError:
         return False
 
-if __name__ == '__main__':
+def scan_data_file(str_fn, dic_form):
 
-    # Read CLI parameters
-    if len(sys.argv) > 2:
-        str_fn_i_name = sys.argv[1] # Assume this to be the .csv file
-        str_fn_f_name = sys.argv[2] # Assume this to be the .ecffc file
-    else:
-        print("\n\tUsage: ec_csv_check.py demo_checker.csv demo_checker.ecffc")
-        sys.exit(999)
+    print("\nScanning data file: {}".format(str_fn))
+    dic_ret = dict()
 
-    dic_form = load_format_file(str_fn_f_name)
-    deli = dic_form["delim"]
-    head = dic_form['header'].lower() == 'yes'
-    noda = dic_form['nodata'].strip('"')
+    str_deli = dic_form["delim"]
+    bol_head = dic_form['header'].lower() == 'yes'
+    str_noda = dic_form['nodata'].strip('"')
     lst_error_by_col = [0 for t in dic_form['tokens'].keys()]
 
-    print("\nData:")
     cnt_lines = 0
     num_cols = 0
-    with open(str_fn_i_name, 'r') as fili:
+    with open(str_fn, 'r') as fili:
         for line in fili:
-            bol_err_in_this_line = False
-            if cnt_lines == 0 and dic_form["header"] == 'Yes':
-                lst_header = line.split(deli)
+            bol_err_in_this_line = False  # Assumed innocent, until proven guilty...
+            lst_tok = [tok.strip() for tok in line.strip().split(str_deli)]
+            if cnt_lines == 0 and bol_head:
+                lst_header = lst_tok
                 num_cols = len(lst_header)
-                print("num cols: {} deli: {}\nheader: {}".format(num_cols, deli, line.strip()))
+                print("Delimiter: {}\nNumber of columns: {}\nheader: {}".format(str_deli, num_cols, lst_header))
             else:
-                lst_tok = line.split(deli)
-                if head and num_cols != 0:
+                if bol_head and num_cols != 0:
                     if len(lst_tok) != num_cols:
                         print("! lin {} has wrong number of delimiters: {}".format(cnt_lines, line))
                         continue
@@ -187,7 +186,7 @@ if __name__ == '__main__':
                     if True: # not bol_err_in_this_line):  # i.e. No errors so far, in this line
                         if 'nullable' in dic_fmt.keys():
                             ##print "\t", dic_fmt['nullable'], "|"+str_val+"|"
-                            if dic_fmt['nullable'] == True or str_val != noda:
+                            if dic_fmt['nullable'] == True or str_val != str_noda:
                                 pass
                             else:
                                 bol_err_in_this_line = True
@@ -199,7 +198,26 @@ if __name__ == '__main__':
             if cnt_lines%100000 == 0:
                 print("line: {}".format(cnt_lines))
 
+    dic_ret['num_lines'] = cnt_lines
+    dic_ret['err_by_col'] = lst_error_by_col
+
+    return dic_ret
+
+if __name__ == '__main__':
+
+    # Read CLI parameters
+    if len(sys.argv) > 2:
+        str_fn_i_name = sys.argv[1] # Assume this to be the .csv file
+        str_fn_f_name = sys.argv[2] # Assume this to be the .ecffc file
+    else:
+        print("\n\tUsage: ec_csv_check.py demo_checker.csv demo_checker.ecffc")
+        sys.exit(999)
+
+    dic_form = load_format_file(str_fn_f_name)
+
+    dic_anal = scan_data_file(str_fn_i_name, dic_form)
+
     # Summarize error statistics...
-    print("\nNumber of Errors in {} lines, by column = {}".format(cnt_lines, lst_error_by_col))
+    print("\nNumber of Errors in {} lines: {}, \n  by column = {}".format(dic_anal['num_lines'], sum(dic_anal['err_by_col']), dic_anal['err_by_col']))
 
     print("Done...")
