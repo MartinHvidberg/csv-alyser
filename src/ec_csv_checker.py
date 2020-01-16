@@ -17,7 +17,7 @@ from uuid import UUID
 #   Error statistics summary
 #   real CLI interface
 #   real testing
-#   real documantation
+#   real documentation
 #   real logging
 
 def load_format_file(str_fn):
